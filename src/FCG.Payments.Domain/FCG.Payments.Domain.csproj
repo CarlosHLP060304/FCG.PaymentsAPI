@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>FCG.Payments.Domain</RootNamespace>
+    <AssemblyName>FCG.Payments.Domain</AssemblyName>
+  </PropertyGroup>
+</Project>

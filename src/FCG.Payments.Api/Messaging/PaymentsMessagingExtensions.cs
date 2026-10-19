@@ -30,12 +30,17 @@ public static class PaymentsMessagingExtensions
                     host.Password(password);
                 });
 
-                bus.Message<PaymentProcessedEvent>(message =>
+                // Catalog publica JSON direto no exchange curto, sem MT-MessageType.
+                bus.Message<OrderPlacedEvent>(message =>
+                    message.SetEntityName("OrderPlacedEvent"));
+                bus.Message<PaymentProcessedIntegrationEvent>(message =>
                     message.SetEntityName("PaymentProcessedEvent"));
 
                 bus.ReceiveEndpoint(PaymentMessageTestEndpoints.OrderPlacedQueue, endpoint =>
                 {
                     endpoint.PrefetchCount = 16;
+                    // Somente esta entrada aceita JSON sem envelope. A saida mantem o envelope MassTransit.
+                    endpoint.UseRawJsonDeserializer(RawSerializerOptions.All, isDefault: true);
                     endpoint.UseMessageRetry(retry =>
                     {
                         retry.Ignore<InvalidOrderPlacedEventException>();

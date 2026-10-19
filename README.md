@@ -6,9 +6,9 @@ Microsserviço independente responsável exclusivamente pelo domínio financeiro
 
 - Consumir `OrderPlacedEvent` via RabbitMQ e criar pagamentos `Pending` de forma idempotente.
 - Registrar e processar pagamentos, definir aprovação ou rejeição e garantir idempotência.
-- Futuramente publicar `PaymentProcessedEvent`.
+- Publicar `PaymentProcessedEvent` por Outbox persistente, mantendo o resultado financeiro até a publicação.
 
-O serviço não é responsável por catálogo, pedidos, biblioteca, usuários ou notificações e não acessa bancos pertencentes a outros serviços. Os contratos de integração serão adicionados no card correspondente; entidades de domínio não serão usadas como contratos de mensagem.
+O serviço não é responsável por catálogo, pedidos, biblioteca, usuários ou notificações e não acessa bancos pertencentes a outros serviços. Os contratos de integração são adaptados na borda de mensageria; entidades de domínio não são usadas como contratos de mensagem.
 
 ## Tecnologia
 
@@ -23,7 +23,7 @@ O serviço não é responsável por catálogo, pedidos, biblioteca, usuários ou
 - `src/FCG.Payments.Api`: host HTTP, configuração, DI e endpoints operacionais.
 - `src/FCG.Payments.Application`: casos de uso de criação idempotente e atualização de status, além das abstrações.
 - `src/FCG.Payments.Domain`: pagamentos, tentativas e regras de transição do domínio financeiro, sem dependências de outras camadas.
-- `src/FCG.Payments.Infrastructure`: persistência EF Core exclusiva do serviço e futuras integrações de mensageria.
+- `src/FCG.Payments.Infrastructure`: persistência EF Core exclusiva do serviço, Inbox e Outbox.
 - `tests/FCG.Payments.UnitTests`: testes unitários.
 - `tests/FCG.Payments.IntegrationTests`: testes de integração do host.
 
@@ -56,4 +56,7 @@ Ao consumir `OrderPlacedEvent`, o PaymentsAPI cria/reutiliza o pagamento pendent
 
 ## Status da implementação
 
-Fundação financeira e consumo idempotente implementados: pagamentos `Pending` por padrão, transições simuladas e determinísticas para `Approved`/`Rejected`, tentativas, Inbox persistente, unicidade por `OrderId`, consumer MassTransit/RabbitMQ e transações locais. A publicação de `PaymentProcessedEvent` permanece para o card seguinte.
+Fundação financeira e consumo idempotente implementados: pagamentos `Pending` por padrão, transições simuladas e determinísticas para `Approved`/`Rejected`, tentativas, Inbox persistente, unicidade por `OrderId`, consumer MassTransit/RabbitMQ e transações locais. A publicação de `PaymentProcessedEvent` utiliza Outbox persistente e contrato de transporte compatível com Catalog e Notifications.
+## Integração com os outros serviços
+
+Consulte [o guia de integração](docs/INTEGRACAO-CATALOG-NOTIFICATIONS.md) para entender os contratos, executar os testes e acompanhar a correção validada localmente. O Dockerfile gera uma imagem .NET 8; o banco e suas migrations devem ser preparados pelo ambiente integrado.

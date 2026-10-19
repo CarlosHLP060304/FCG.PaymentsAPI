@@ -7,5 +7,9 @@ public sealed class MassTransitPaymentProcessedEventPublisher(IPublishEndpoint p
     : IPaymentProcessedEventPublisher
 {
     public Task PublishAsync(PaymentProcessedEvent message, CancellationToken cancellationToken = default) =>
-        publishEndpoint.Publish(message, cancellationToken);
+        publishEndpoint.Publish(PaymentProcessedIntegrationEvent.From(message), context =>
+        {
+            context.MessageId = message.EventId;
+            context.CorrelationId = message.CorrelationId;
+        }, cancellationToken);
 }

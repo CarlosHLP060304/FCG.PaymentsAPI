@@ -12,7 +12,7 @@ public sealed class PaymentOutboxDispatcher(
     TimeProvider timeProvider,
     ILogger<PaymentOutboxDispatcher> logger)
 {
-    private const string PaymentProcessedExchange = "payment-processed";
+    private const string PaymentProcessedExchange = "PaymentProcessedEvent";
     private const int BatchSize = 20;
     private static readonly TimeSpan LeaseDuration = TimeSpan.FromMinutes(2);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);

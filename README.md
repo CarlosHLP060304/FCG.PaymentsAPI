@@ -59,4 +59,21 @@ Ao consumir `OrderPlacedEvent`, o PaymentsAPI cria/reutiliza o pagamento pendent
 Fundação financeira e consumo idempotente implementados: pagamentos `Pending` por padrão, transições simuladas e determinísticas para `Approved`/`Rejected`, tentativas, Inbox persistente, unicidade por `OrderId`, consumer MassTransit/RabbitMQ e transações locais. A publicação de `PaymentProcessedEvent` utiliza Outbox persistente e contrato de transporte compatível com Catalog e Notifications.
 ## Integração com os outros serviços
 
-Consulte [o guia de integração](docs/INTEGRACAO-CATALOG-NOTIFICATIONS.md) para entender os contratos, executar os testes e acompanhar a correção validada localmente. O Dockerfile gera uma imagem .NET 8; o banco e suas migrations devem ser preparados pelo ambiente integrado.
+Consulte [o guia de integração](docs/INTEGRACAO-CATALOG-NOTIFICATIONS.md) para entender os contratos, executar os testes e acompanhar a correção validada localmente. O Dockerfile gera uma imagem .NET 8. A infraestrutura cria o banco e o usuário; no modo local descrito abaixo, a aplicação prepara suas próprias tabelas.
+
+## Banco na demonstração local
+
+O Compose central da infraestrutura deve criar o banco e seu usuário e aguardar o PostgreSQL ficar saudável. No Payments, configure:
+
+```yaml
+environment:
+  ASPNETCORE_ENVIRONMENT: Development
+  DemonstracaoLocal__Habilitada: "true"
+  ConnectionStrings__PaymentsDatabase: "Host=postgres;Port=5432;Database=fcg_payments_demo;Username=fcg_payments;Password=<senha configurada na infra>"
+```
+
+Com a opção habilitada, o próprio Payments aplica somente suas migrations existentes antes de abrir HTTP e iniciar os consumidores RabbitMQ. Não há script SQL no Compose, container preparador, criação de banco/usuário ou dados de exemplo nessa inicialização. O nome e as credenciais do banco são os da connection string; não precisam corresponder ao exemplo acima.
+
+O histórico do EF Core evita reaplicar migrations já concluídas. Um lock de sessão no PostgreSQL serializa essa preparação caso duas instâncias locais iniciem no mesmo banco. Reiniciar a aplicação preserva os dados. Se uma migration falhar, a aplicação encerra sem liberar as operações HTTP/consumo com uma estrutura incompleta.
+
+A opção é desabilitada por padrão. Valores diferentes de `true`/`false` são rejeitados; habilitá-la fora de `Development` também impede a inicialização. Em produção, mantenha-a desabilitada e aplique as migrations por um processo de implantação controlado.

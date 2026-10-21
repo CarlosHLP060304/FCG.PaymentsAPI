@@ -1,9 +1,12 @@
 using FCG.Payments.Application;
 using FCG.Payments.Api.Messaging;
 using FCG.Payments.Api.Payments;
+using FCG.Payments.Api.Startup;
 using FCG.Payments.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+var localDemonstrationEnabled = LocalDemonstrationDatabase.IsEnabled(
+    builder.Configuration, builder.Environment.EnvironmentName);
 
 builder.Services.AddProblemDetails();
 builder.Services.AddHealthChecks();
@@ -14,6 +17,12 @@ builder.Services.AddPaymentsInfrastructure(builder.Configuration);
 builder.Services.AddPaymentsMessaging(builder.Configuration);
 
 var app = builder.Build();
+
+if (localDemonstrationEnabled)
+{
+    await LocalDemonstrationDatabase.MigrateAsync(
+        app.Services, app.Logger, app.Lifetime.ApplicationStopping);
+}
 
 app.MapPaymentListingEndpoints();
 
@@ -36,6 +45,6 @@ app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks
 });
 app.MapHealthChecks("/health/ready");
 
-app.Run();
+await app.RunAsync();
 
 public partial class Program { }
